@@ -8,6 +8,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,8 +44,9 @@ public abstract class JsonStorageService<T> {
         }
 
         try (FileReader reader = new FileReader(file)) {
-            TypeToken<HashMap<String, T>> typeToken = new TypeToken<>() {};
-            Map<String, T> loadedData = gson.fromJson(reader, typeToken.getType());
+            // Create a type that tells Gson exactly what to deserialize into
+            Type mapType = TypeToken.getParameterized(HashMap.class, String.class, typeParameterClass).getType();
+            Map<String, T> loadedData = gson.fromJson(reader, mapType);
             if (loadedData != null) {
                 entities = new ConcurrentHashMap<>(loadedData);
             }
