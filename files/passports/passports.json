@@ -1,0 +1,26 @@
+{
+  "aaa7058f-fdaf-4fa0-acb2-e64b7e6e8db4": {
+    "id": "aaa7058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+    "address": "Address 1",
+    "birthDate": "1985-05-15",
+    "number": "311234",
+    "series": "1817",
+    "overdue": "2025-12-31"
+  },
+  "aaa2058f-fdaf-4fa0-acb2-e64b7e6e8db4": {
+    "id": "aaa2058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+    "address": "Address 2",
+    "birthDate": "2021-05-15",
+    "number": "111111",
+    "series": "2233",
+    "overdue": "2025-12-31"
+  },
+  "aaa3058f-fdaf-4fa0-acb2-e64b7e6e8db4": {
+    "id": "aaa3058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+    "address": "Address 3",
+    "birthDate": "2021-05-15",
+    "number": "111111",
+    "series": "2233",
+    "overdue": "2025-12-31"
+  }
+}

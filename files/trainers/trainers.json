@@ -1,0 +1,13 @@
+{
+  "ddd1058f-fdaf-4fa0-acb2-e64b7e6e8db4": {
+    "id": "ddd1058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+    "name": "John Doe",
+    "password": "trainer",
+    "passportId": "aaa2058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+    "phone": "+123456789",
+    "trainingClassIds": [
+      "ccc1058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+      "ccc2058f-fdaf-4fa0-acb2-e64b7e6e8db4"
+    ]
+  }
+}
