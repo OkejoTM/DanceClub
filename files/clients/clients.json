@@ -3,6 +3,9 @@
     "id": "6db7058f-fdaf-4fa0-acb2-e64b7e6e8db4",
     "name": "Jane Smith",
     "passportId": "aaa7058f-fdaf-4fa0-acb2-e64b7e6e8db4",
-    "subscriptionIds": ["bbb1058f-fdaf-4fa0-acb2-e64b7e6e8db4", "bbb2058f-fdaf-4fa0-acb2-e64b7e6e8db4"]
+    "subscriptionIds": [
+      "bbb1058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+      "bbb2058f-fdaf-4fa0-acb2-e64b7e6e8db4"
+    ]
   }
 }

@@ -65,6 +65,10 @@ public class ManagerService {
         clientService.deleteClient(clientId);
     }
 
+    public List<Client> getAllClients(){
+        return clientService.getAllClients();
+    }
+
     // Subscription management
     public Subscription createSubscription(
             String clientId,
