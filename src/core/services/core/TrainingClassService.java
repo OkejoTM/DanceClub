@@ -49,6 +49,15 @@ public class TrainingClassService {
         return allClasses;
     }
 
+    public List<TrainingClass> getAllClasses() {
+        List<TrainingClass> allClasses = new ArrayList<>();
+
+        allClasses.addAll(groupTrainingStorage.getAll());
+        allClasses.addAll(soloTrainingStorage.getAll());
+
+        return allClasses;
+    }
+
     public GroupTraining createGroupTraining(String danceType, TrainingLevel level, String trainerId, AgeGroup ageGroup) {
         GroupTraining training = new GroupTraining(danceType, level, trainerId, ageGroup);
         groupTrainingStorage.save(training);

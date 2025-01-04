@@ -46,7 +46,7 @@ public class TrainerWindow extends BaseWindow {
         JTable table = new JTable(model);
 
         // Load trainer's classes
-        List<TrainingClass> classes = trainingClassService.getTrainerClasses(userId);
+        List<TrainingClass> classes = trainingClassService.getTrainerClasses(userId); // TODO : не через trainingClassService, а через TrainerService -> getClasses
         for (TrainingClass cls : classes) {
             model.addRow(new Object[]{
                     cls instanceof GroupTraining ? "Group" : "Solo",

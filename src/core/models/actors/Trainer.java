@@ -18,8 +18,8 @@ public class Trainer extends Employee {
         this.trainingClassIds = new ArrayList<>();
     }
 
-    public Trainer(String id, String name, String password, String passportId, String phone) {
-        super(id, name, password, passportId, phone);
+    public Trainer(String name, String passportId, String phone) {
+        super(name, passportId, phone);
         this.trainingClassIds = new ArrayList<>();
     }
 
@@ -34,6 +34,11 @@ public class Trainer extends Employee {
 
     public void addTrainingClass(String trainingClassId) {
         this.trainingClassIds.add(trainingClassId);
+    }
+
+    @Override
+    public String toString() {
+        return getName();
     }
 }
 

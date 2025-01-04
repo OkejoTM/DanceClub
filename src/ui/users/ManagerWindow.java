@@ -3,14 +3,12 @@ package ui.users;
 import core.models.Subscription;
 import core.models.actors.Client;
 import core.models.actors.Trainer;
+import core.models.base.TrainingClass;
 import core.models.enums.AgeGroup;
 import core.models.enums.TrainingLevel;
 import core.models.trainings.GroupTraining;
 import core.models.trainings.SoloTraining;
-import core.services.core.ClientService;
-import core.services.core.ManagerService;
-import core.services.core.SubscriptionService;
-import core.services.core.TrainingClassService;
+import core.services.core.*;
 import core.services.storage.*;
 import ui.users.base.BaseWindow;
 
@@ -22,6 +20,8 @@ import java.util.List;
 
 public class ManagerWindow extends BaseWindow {
     private final ManagerService managerService;
+    private final TrainerService trainerService;
+    private final TrainingClassService trainingClassService;
     private final JTabbedPane tabbedPane;
 
     public ManagerWindow(String managerId) {
@@ -29,7 +29,6 @@ public class ManagerWindow extends BaseWindow {
 
         this.managerService = new ManagerService(
                 new ManagerStorageService(),
-                new TrainerStorageService(),
                 new ClientService(
                         new ClientStorageService(),
                         new SubscriptionStorageService(),
@@ -48,6 +47,14 @@ public class ManagerWindow extends BaseWindow {
                         new SubscriptionStorageService(),
                         new ClientStorageService()
                 )
+        );
+        trainerService = new TrainerService(
+                new TrainerStorageService()
+        );
+        trainingClassService = new TrainingClassService(
+                new GroupTrainingStorageService(),
+                new SoloTrainingStorageService(),
+                new TrainerStorageService()
         );
 
         tabbedPane = new JTabbedPane();
@@ -278,7 +285,7 @@ public class ManagerWindow extends BaseWindow {
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
                     String trainerId = (String) tableModel.getValueAt(selectedRow, 0);
-                    managerService.deleteTrainer(trainerId);
+                    trainerService.deleteTrainer(trainerId);
                     tableModel.removeRow(selectedRow);
                 }
             } else {
@@ -328,7 +335,7 @@ public class ManagerWindow extends BaseWindow {
             String phone = phoneField.getText().trim();
 
             if (!name.isEmpty() && !password.isEmpty() && !passportId.isEmpty() && !phone.isEmpty()) {
-                Trainer trainer = managerService.createTrainer(name, password, passportId, phone);
+                Trainer trainer = trainerService.createTrainer(name, password, passportId, phone);
                 tableModel.addRow(new Object[]{trainer.getId(), trainer.getName(), trainer.getPassportId(), trainer.getPhone()});
                 dialog.dispose();
             } else {
@@ -377,9 +384,12 @@ public class ManagerWindow extends BaseWindow {
             String phone = phoneField.getText().trim();
 
             if (!name.isEmpty() && !passportId.isEmpty() && !phone.isEmpty()) {
-                Trainer trainer = new Trainer(name, "", passportId, phone); // Empty password as we don't update it
+                Trainer oldTrainer = trainerService.getTrainerById(trainerId);
+                Trainer trainer = new Trainer(name, passportId, phone);
                 trainer.setId(trainerId);
-                managerService.updateTrainer(trainer);
+                trainer.setTrainingClassIds(oldTrainer.getTrainingClassIds());
+                trainer.setPassword(oldTrainer.getPassword());
+                trainerService.updateTrainer(trainer);
 
                 tableModel.setValueAt(name, row, 1);
                 tableModel.setValueAt(passportId, row, 2);
@@ -401,7 +411,7 @@ public class ManagerWindow extends BaseWindow {
 
     private void refreshTrainerTable(DefaultTableModel tableModel) {
         tableModel.setRowCount(0);
-        List<Trainer> trainers = managerService.getAllTrainers();
+        List<Trainer> trainers = trainerService.getAllTrainers();
         for (Trainer trainer : trainers) {
             tableModel.addRow(new Object[]{
                     trainer.getId(),
@@ -417,7 +427,7 @@ public class ManagerWindow extends BaseWindow {
 
         // Create table model with columns
         DefaultTableModel tableModel = new DefaultTableModel(
-                new String[]{"ID", "Type", "Dance Type", "Level", "Trainer", "Age Group"},
+                new String[]{"ID", "Type", "Dance Type", "Level", "Trainer", "Details"},
                 0
         ) {
             @Override
@@ -444,6 +454,7 @@ public class ManagerWindow extends BaseWindow {
         // Add action listeners
         addGroupButton.addActionListener(e -> showAddGroupClassDialog(tableModel));
         addSoloButton.addActionListener(e -> showAddSoloClassDialog(tableModel));
+
         assignTrainerButton.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow != -1) {
@@ -457,8 +468,35 @@ public class ManagerWindow extends BaseWindow {
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(buttonsPanel, BorderLayout.SOUTH);
 
+        refreshClassesTable(tableModel);
+
         return panel;
     }
+
+    private void refreshClassesTable(DefaultTableModel tableModel) {
+        tableModel.setRowCount(0);
+        var classes = trainingClassService.getAllClasses();
+        for (TrainingClass trainingClass : classes) {
+            String details;
+            if (trainingClass instanceof GroupTraining groupClass) {
+                details = "Age Group: " + groupClass.getAgeGroup();
+            } else if (trainingClass instanceof SoloTraining soloClass) {
+                details = "Client ID: " + soloClass.getClientId();
+            } else {
+                details = "N/A";
+            }
+
+            tableModel.addRow(new Object[]{
+                    trainingClass.getId(),
+                    trainingClass.getClass().getSimpleName(),
+                    trainingClass.getDanceType(),
+                    trainingClass.getLevel(),
+                    trainingClass.getTrainerId(),
+                    details
+            });
+        }
+    }
+
 
     private void showAddGroupClassDialog(DefaultTableModel tableModel) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Group Class", true);
@@ -469,8 +507,8 @@ public class ManagerWindow extends BaseWindow {
         JComboBox<TrainingLevel> levelCombo = new JComboBox<>(TrainingLevel.values());
         JComboBox<AgeGroup> ageGroupCombo = new JComboBox<>(AgeGroup.values());
 
-        List<Trainer> trainers = managerService.getAllTrainers();
-        JComboBox<Trainer> trainerCombo = new JComboBox<>(trainers.toArray(new Trainer[0]));
+        List<Trainer> trainers = trainerService.getAllTrainers();
+        JComboBox<Trainer> trainerCombo = new JComboBox<>(trainers.toArray(new Trainer[0])); // TODO: trainers by names
 
         form.add(new JLabel("Dance Type:"));
         form.add(danceTypeField);
@@ -666,7 +704,7 @@ public class ManagerWindow extends BaseWindow {
         String classId = (String) tableModel.getValueAt(row, 0);
 
         // Get trainers and create combo box
-        List<Trainer> trainers = managerService.getAllTrainers();
+        List<Trainer> trainers = trainerService.getAllTrainers();
         JComboBox<Trainer> trainerCombo = new JComboBox<>(trainers.toArray(new Trainer[0]));
 
         form.add(new JLabel("Trainer:"));
@@ -705,7 +743,7 @@ public class ManagerWindow extends BaseWindow {
         JTextField danceTypeField = new JTextField();
         JComboBox<TrainingLevel> levelCombo = new JComboBox<>(TrainingLevel.values());
 
-        List<Trainer> trainers = managerService.getAllTrainers();
+        List<Trainer> trainers = trainerService.getAllTrainers();
         List<Client> clients = managerService.getAllClients();
 
         JComboBox<Trainer> trainerCombo = new JComboBox<>(trainers.toArray(new Trainer[0]));

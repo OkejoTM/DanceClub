@@ -28,6 +28,14 @@ public abstract class Employee {
         this.phone = phone;
     }
 
+    protected Employee(String name, String passportId, String phone)
+    {
+        this.name= name;
+        this.passportId = passportId;
+        this.phone = phone;
+    }
+
+
     // Getters and Setters
     public String getId() {
         return id;

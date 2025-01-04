@@ -15,41 +15,19 @@ import java.util.List;
 
 public class ManagerService {
     private final ManagerStorageService managerStorage;
-    private final TrainerStorageService trainerStorage;
     private final ClientService clientService;
     private final TrainingClassService trainingClassService;
     private final SubscriptionService subscriptionService;
 
     public ManagerService(
             ManagerStorageService managerStorage,
-            TrainerStorageService trainerStorage,
             ClientService clientService,
             TrainingClassService trainingClassService,
             SubscriptionService subscriptionService) {
         this.managerStorage = managerStorage;
-        this.trainerStorage = trainerStorage;
         this.clientService = clientService;
         this.trainingClassService = trainingClassService;
         this.subscriptionService = subscriptionService;
-    }
-
-    // Trainer management
-    public Trainer createTrainer(String name, String password, String passportId, String phone) {
-        Trainer trainer = new Trainer(name, password, passportId, phone);
-        trainerStorage.save(trainer);
-        return trainer;
-    }
-
-    public void updateTrainer(Trainer trainer) {
-        trainerStorage.save(trainer);
-    }
-
-    public void deleteTrainer(String trainerId) {
-        trainerStorage.delete(trainerId);
-    }
-
-    public List<Trainer> getAllTrainers() {
-        return trainerStorage.getAll();
     }
 
     // Client management methods (delegating to ClientService)
