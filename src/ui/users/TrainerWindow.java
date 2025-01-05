@@ -1,11 +1,9 @@
 package ui.users;
 
 import core.models.base.TrainingClass;
-import core.models.trainings.GroupTraining;
 import core.services.core.TrainingClassService;
-import core.services.storage.GroupTrainingStorageService;
-import core.services.storage.SoloTrainingStorageService;
 import core.services.storage.TrainerStorageService;
+import core.services.storage.TrainingClassStorageService;
 import ui.users.base.BaseWindow;
 
 import javax.swing.*;
@@ -22,9 +20,8 @@ public class TrainerWindow extends BaseWindow {
         super("Trainer Dashboard", trainerId);
 
         this.trainingClassService = new TrainingClassService(
-                new GroupTrainingStorageService(),
-                new SoloTrainingStorageService(),
-                new TrainerStorageService()
+                new TrainerStorageService(),
+                new TrainingClassStorageService()
         );
 
         tabbedPane = new JTabbedPane();
@@ -38,7 +35,6 @@ public class TrainerWindow extends BaseWindow {
 
         // Create table model for classes
         DefaultTableModel model = new DefaultTableModel();
-        model.addColumn("Type");
         model.addColumn("Dance Type");
         model.addColumn("Level");
         model.addColumn("Schedule");
@@ -46,10 +42,9 @@ public class TrainerWindow extends BaseWindow {
         JTable table = new JTable(model);
 
         // Load trainer's classes
-        List<TrainingClass> classes = trainingClassService.getTrainerClasses(userId); // TODO : не через trainingClassService, а через TrainerService -> getClasses
+        List<TrainingClass> classes = trainingClassService.getTrainerClasses(userId);
         for (TrainingClass cls : classes) {
             model.addRow(new Object[]{
-                    cls instanceof GroupTraining ? "Group" : "Solo",
                     cls.getDanceType(),
                     cls.getLevel(),
                     cls.getSchedule().toString()

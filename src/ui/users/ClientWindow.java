@@ -2,7 +2,6 @@ package ui.users;
 
 import core.models.Subscription;
 import core.models.base.TrainingClass;
-import core.models.trainings.GroupTraining;
 import core.services.core.ClientService;
 import core.services.core.TrainingClassService;
 import core.services.storage.*;
@@ -24,9 +23,8 @@ public class ClientWindow extends BaseWindow {
                 new ClientStorageService(),
                 new SubscriptionStorageService(),
                 new TrainingClassService(
-                        new GroupTrainingStorageService(),
-                        new SoloTrainingStorageService(),
-                        new TrainerStorageService()
+                        new TrainerStorageService(),
+                        new TrainingClassStorageService()
                 )
         );
 
@@ -69,7 +67,6 @@ public class ClientWindow extends BaseWindow {
 
         // Create table model for classes
         DefaultTableModel model = new DefaultTableModel();
-        model.addColumn("Type");
         model.addColumn("Dance Type");
         model.addColumn("Level");
 
@@ -79,7 +76,6 @@ public class ClientWindow extends BaseWindow {
         List<TrainingClass> classes = clientService.getClientClasses(userId);
         for (TrainingClass cls : classes) {
             model.addRow(new Object[]{
-                    cls instanceof GroupTraining ? "Group" : "Solo",
                     cls.getDanceType(),
                     cls.getLevel()
             });

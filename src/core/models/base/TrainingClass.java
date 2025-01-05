@@ -7,33 +7,36 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public abstract class TrainingClass {
+public class TrainingClass {
     private String id;
     private String danceType;
     private TrainingLevel level;
     private String trainerId;
+    private String clientId;
     private List<LocalDate> schedule;
 
     // Default constructor for Gson
-    protected TrainingClass() {
+    public TrainingClass() {
         this.schedule = new ArrayList<>();
     }
 
     // Constructor for new training classes
-    protected TrainingClass(String danceType, TrainingLevel level, String trainerId) {
+    public TrainingClass(String danceType, TrainingLevel level, String trainerId, String clientId) {
         this.id = UUID.randomUUID().toString();
         this.danceType = danceType;
         this.level = level;
         this.trainerId = trainerId;
+        this.clientId = clientId;
         this.schedule = new ArrayList<>();
     }
 
     // Constructor with existing ID
-    protected TrainingClass(String id, String danceType, TrainingLevel level, String trainerId) {
+    public TrainingClass(String id, String danceType, TrainingLevel level, String trainerId, String clientId) {
         this.id = id;
         this.danceType = danceType;
         this.level = level;
         this.trainerId = trainerId;
+        this.clientId = clientId;
         this.schedule = new ArrayList<>();
     }
 
@@ -80,6 +83,15 @@ public abstract class TrainingClass {
 
     public void addScheduleDate(LocalDate date) {
         this.schedule.add(date);
+    }
+
+    // Getters and Setters
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 }
 

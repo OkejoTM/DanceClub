@@ -4,10 +4,7 @@ import core.models.Subscription;
 import core.models.actors.Client;
 import core.models.actors.Trainer;
 import core.models.base.TrainingClass;
-import core.models.enums.AgeGroup;
 import core.models.enums.TrainingLevel;
-import core.models.trainings.GroupTraining;
-import core.models.trainings.SoloTraining;
 import core.services.core.*;
 import core.services.storage.*;
 import ui.users.base.BaseWindow;
@@ -19,42 +16,32 @@ import java.time.LocalDate;
 import java.util.List;
 
 public class ManagerWindow extends BaseWindow {
-    private final ManagerService managerService;
     private final TrainerService trainerService;
+    private final ClientService clientService;
     private final TrainingClassService trainingClassService;
+    private final SubscriptionService subscriptionService;
     private final JTabbedPane tabbedPane;
 
     public ManagerWindow(String managerId) {
         super("Manager Dashboard", managerId);
-
-        this.managerService = new ManagerService(
-                new ManagerStorageService(),
-                new ClientService(
-                        new ClientStorageService(),
-                        new SubscriptionStorageService(),
-                        new TrainingClassService(
-                                new GroupTrainingStorageService(),
-                                new SoloTrainingStorageService(),
-                                new TrainerStorageService()
-                        )
-                ),
+        this.subscriptionService = new SubscriptionService(
+                new SubscriptionStorageService(),
+                new ClientStorageService()
+        );
+        this.trainerService = new TrainerService(
+                new TrainerStorageService()
+        );
+        this.trainingClassService = new TrainingClassService(
+                new TrainerStorageService(),
+                new TrainingClassStorageService()
+        );
+        this.clientService = new ClientService(
+                new ClientStorageService(),
+                new SubscriptionStorageService(),
                 new TrainingClassService(
-                        new GroupTrainingStorageService(),
-                        new SoloTrainingStorageService(),
-                        new TrainerStorageService()
-                ),
-                new SubscriptionService(
-                        new SubscriptionStorageService(),
-                        new ClientStorageService()
+                        new TrainerStorageService(),
+                        new TrainingClassStorageService()
                 )
-        );
-        trainerService = new TrainerService(
-                new TrainerStorageService()
-        );
-        trainingClassService = new TrainingClassService(
-                new GroupTrainingStorageService(),
-                new SoloTrainingStorageService(),
-                new TrainerStorageService()
         );
 
         tabbedPane = new JTabbedPane();
@@ -116,7 +103,7 @@ public class ManagerWindow extends BaseWindow {
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
                     String clientId = (String) tableModel.getValueAt(selectedRow, 0);
-                    managerService.deleteClient(clientId);
+                    clientService.deleteClient(clientId);
                     tableModel.removeRow(selectedRow);
                 }
             } else {
@@ -158,7 +145,7 @@ public class ManagerWindow extends BaseWindow {
             String passportId = passportField.getText().trim();
 
             if (!name.isEmpty() && !passportId.isEmpty()) {
-                Client client = managerService.createClient(name, passportId);
+                Client client = clientService.createClient(name, passportId);
                 tableModel.addRow(new Object[]{client.getId(), client.getName(), client.getPassportId()});
                 dialog.dispose();
             } else {
@@ -204,7 +191,7 @@ public class ManagerWindow extends BaseWindow {
             if (!name.isEmpty() && !passportId.isEmpty()) {
                 Client client = new Client(name, passportId);
                 client.setId(clientId);
-                managerService.updateClient(client);
+                clientService.updateClient(client);
 
                 tableModel.setValueAt(name, row, 1);
                 tableModel.setValueAt(passportId, row, 2);
@@ -225,7 +212,7 @@ public class ManagerWindow extends BaseWindow {
 
     private void refreshClientTable(DefaultTableModel tableModel) {
         tableModel.setRowCount(0);
-        List<Client> clients = managerService.getAllClients();
+        List<Client> clients = clientService.getAllClients();
         for (Client client : clients) {
             tableModel.addRow(new Object[]{
                     client.getId(),
@@ -427,7 +414,7 @@ public class ManagerWindow extends BaseWindow {
 
         // Create table model with columns
         DefaultTableModel tableModel = new DefaultTableModel(
-                new String[]{"ID", "Type", "Dance Type", "Level", "Trainer", "Details"},
+                new String[]{"ID", "Dance Type", "Level", "Trainer", "Client"},
                 0
         ) {
             @Override
@@ -443,17 +430,14 @@ public class ManagerWindow extends BaseWindow {
 
         // Create buttons panel
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton addGroupButton = new JButton("Add Group Class");
-        JButton addSoloButton = new JButton("Add Solo Class");
+        JButton addClass = new JButton("Add Class");
         JButton assignTrainerButton = new JButton("Assign Trainer");
 
-        buttonsPanel.add(addGroupButton);
-        buttonsPanel.add(addSoloButton);
+        buttonsPanel.add(addClass);
         buttonsPanel.add(assignTrainerButton);
 
         // Add action listeners
-        addGroupButton.addActionListener(e -> showAddGroupClassDialog(tableModel));
-        addSoloButton.addActionListener(e -> showAddSoloClassDialog(tableModel));
+        addClass.addActionListener(e -> showAddClassDialog(tableModel));
 
         assignTrainerButton.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
@@ -477,47 +461,39 @@ public class ManagerWindow extends BaseWindow {
         tableModel.setRowCount(0);
         var classes = trainingClassService.getAllClasses();
         for (TrainingClass trainingClass : classes) {
-            String details;
-            if (trainingClass instanceof GroupTraining groupClass) {
-                details = "Age Group: " + groupClass.getAgeGroup();
-            } else if (trainingClass instanceof SoloTraining soloClass) {
-                details = "Client ID: " + soloClass.getClientId();
-            } else {
-                details = "N/A";
-            }
-
             tableModel.addRow(new Object[]{
                     trainingClass.getId(),
-                    trainingClass.getClass().getSimpleName(),
                     trainingClass.getDanceType(),
                     trainingClass.getLevel(),
                     trainingClass.getTrainerId(),
-                    details
+                    trainingClass.getClientId()
             });
         }
     }
 
 
-    private void showAddGroupClassDialog(DefaultTableModel tableModel) {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Group Class", true);
+    private void showAddClassDialog(DefaultTableModel tableModel) {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Class", true);
         JPanel form = new JPanel(new GridLayout(5, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JTextField danceTypeField = new JTextField();
         JComboBox<TrainingLevel> levelCombo = new JComboBox<>(TrainingLevel.values());
-        JComboBox<AgeGroup> ageGroupCombo = new JComboBox<>(AgeGroup.values());
 
         List<Trainer> trainers = trainerService.getAllTrainers();
-        JComboBox<Trainer> trainerCombo = new JComboBox<>(trainers.toArray(new Trainer[0])); // TODO: trainers by names
+        JComboBox<Trainer> trainerCombo = new JComboBox<>(trainers.toArray(new Trainer[0]));
+
+        List<Client> clients = clientService.getAllClients();
+        JComboBox<Client> clientCombo = new JComboBox<>(clients.toArray(new Client[0]));
 
         form.add(new JLabel("Dance Type:"));
         form.add(danceTypeField);
         form.add(new JLabel("Level:"));
         form.add(levelCombo);
-        form.add(new JLabel("Age Group:"));
-        form.add(ageGroupCombo);
         form.add(new JLabel("Trainer:"));
         form.add(trainerCombo);
+        form.add(new JLabel("Clients:"));
+        form.add(clientCombo);
 
         JButton saveButton = new JButton("Save");
         JButton cancelButton = new JButton("Cancel");
@@ -528,20 +504,19 @@ public class ManagerWindow extends BaseWindow {
         saveButton.addActionListener(e -> {
             String danceType = danceTypeField.getText().trim();
             TrainingLevel level = (TrainingLevel) levelCombo.getSelectedItem();
-            AgeGroup ageGroup = (AgeGroup) ageGroupCombo.getSelectedItem();
             Trainer trainer = (Trainer) trainerCombo.getSelectedItem();
+            Client client = (Client) clientCombo.getSelectedItem();
 
-            if (!danceType.isEmpty() && level != null && ageGroup != null && trainer != null) {
-                GroupTraining groupTraining = managerService.createGroupTraining(
-                        danceType, level, trainer.getId(), ageGroup);
+            if (!danceType.isEmpty() && level != null && trainer != null && client != null) {
+                TrainingClass training = trainingClassService.createTraining(
+                        danceType, level, trainer.getId(), client.getId());
 
                 tableModel.addRow(new Object[]{
-                        groupTraining.getId(),
-                        "Group",
-                        groupTraining.getDanceType(),
-                        groupTraining.getLevel(),
+                        training.getId(),
+                        training.getDanceType(),
+                        training.getLevel(),
                         trainer.getName(),
-                        groupTraining.getAgeGroup()
+                        client.getName()
                 });
                 dialog.dispose();
             } else {
@@ -612,7 +587,7 @@ public class ManagerWindow extends BaseWindow {
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Get clients and create combo box
-        List<Client> clients = managerService.getAllClients();
+        List<Client> clients = clientService.getAllClients();
         JComboBox<Client> clientCombo = new JComboBox<>(clients.toArray(new Client[0]));
 
         // Add date pickers (you might want to use a proper date picker library)
@@ -656,7 +631,7 @@ public class ManagerWindow extends BaseWindow {
                     // This is a placeholder for demonstration
                     String trainingClassId = "TRAINING_CLASS_ID";
 
-                    Subscription subscription = managerService.createSubscription(
+                    Subscription subscription = subscriptionService.createSubscription(
                             client.getId(),
                             trainingClassId,
                             startDate,
@@ -719,76 +694,11 @@ public class ManagerWindow extends BaseWindow {
         saveButton.addActionListener(e -> {
             Trainer selectedTrainer = (Trainer) trainerCombo.getSelectedItem();
             if (selectedTrainer != null) {
-                managerService.assignTrainerToClass(classId, selectedTrainer.getId());
+                trainingClassService.assignTrainerToClass(classId, selectedTrainer.getId());
                 tableModel.setValueAt(selectedTrainer.getName(), row, 4); // Update trainer name in table
                 dialog.dispose();
             } else {
                 JOptionPane.showMessageDialog(dialog, "Please select a trainer");
-            }
-        });
-
-        cancelButton.addActionListener(e -> dialog.dispose());
-
-        dialog.add(form);
-        dialog.pack();
-        dialog.setLocationRelativeTo(this);
-        dialog.setVisible(true);
-    }
-
-    private void showAddSoloClassDialog(DefaultTableModel tableModel) {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Solo Class", true);
-        JPanel form = new JPanel(new GridLayout(5, 2, 5, 5));
-        form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JTextField danceTypeField = new JTextField();
-        JComboBox<TrainingLevel> levelCombo = new JComboBox<>(TrainingLevel.values());
-
-        List<Trainer> trainers = trainerService.getAllTrainers();
-        List<Client> clients = managerService.getAllClients();
-
-        JComboBox<Trainer> trainerCombo = new JComboBox<>(trainers.toArray(new Trainer[0]));
-        JComboBox<Client> clientCombo = new JComboBox<>(clients.toArray(new Client[0]));
-
-        form.add(new JLabel("Dance Type:"));
-        form.add(danceTypeField);
-        form.add(new JLabel("Level:"));
-        form.add(levelCombo);
-        form.add(new JLabel("Trainer:"));
-        form.add(trainerCombo);
-        form.add(new JLabel("Client:"));
-        form.add(clientCombo);
-
-        JButton saveButton = new JButton("Save");
-        JButton cancelButton = new JButton("Cancel");
-
-        form.add(saveButton);
-        form.add(cancelButton);
-
-        saveButton.addActionListener(e -> {
-            String danceType = danceTypeField.getText().trim();
-            TrainingLevel level = (TrainingLevel) levelCombo.getSelectedItem();
-            Trainer trainer = (Trainer) trainerCombo.getSelectedItem();
-            Client client = (Client) clientCombo.getSelectedItem();
-
-            if (!danceType.isEmpty() && level != null && trainer != null && client != null) {
-                SoloTraining soloTraining = managerService.createSoloTraining(
-                        danceType,
-                        level,
-                        trainer.getId(),
-                        client.getId()
-                );
-
-                tableModel.addRow(new Object[]{
-                        soloTraining.getId(),
-                        "Solo",
-                        soloTraining.getDanceType(),
-                        soloTraining.getLevel(),
-                        trainer.getName(),
-                        "N/A" // Solo classes don't have age groups
-                });
-                dialog.dispose();
-            } else {
-                JOptionPane.showMessageDialog(dialog, "Please fill in all fields");
             }
         });
 
