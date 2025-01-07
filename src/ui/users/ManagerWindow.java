@@ -1,17 +1,18 @@
 package ui.users;
 
+import core.models.Passport;
 import core.models.Subscription;
 import core.models.actors.Client;
 import core.models.actors.Trainer;
+import core.models.base.Employee;
 import core.models.base.TrainingClass;
 import core.models.enums.TrainingLevel;
 import core.services.core.*;
 import core.services.storage.*;
 import ui.users.base.BaseWindow;
-import ui.utils.UserFriendlyTableModel;
+import ui.utils.EntityAwareTableModel;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +22,7 @@ public class ManagerWindow extends BaseWindow {
     private final ClientService clientService;
     private final TrainingClassService trainingClassService;
     private final SubscriptionService subscriptionService;
+    private final PassportService passportService;
     private final JTabbedPane tabbedPane;
 
     public ManagerWindow(String managerId) {
@@ -44,6 +46,7 @@ public class ManagerWindow extends BaseWindow {
                         new TrainingClassStorageService()
                 )
         );
+        this.passportService = new PassportService(new PassportStorageService());
 
         tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Clients", createClientsPanel());
@@ -58,9 +61,17 @@ public class ManagerWindow extends BaseWindow {
         JPanel panel = new JPanel(new BorderLayout());
 
         // Create table model with columns
-        String[] realColumns = new String[]{"ID", "Name", "Passport ID"};
-        String[] displayColumns = new String[]{"Name", "Passport ID"};
-        UserFriendlyTableModel tableModel = new UserFriendlyTableModel(realColumns, displayColumns);
+        String[] realColumns = new String[]{"ID", "Name", "Passport Details"};
+        String[] displayColumns = new String[]{"Name", "Passport Details"};
+        EntityAwareTableModel<Client> tableModel = new EntityAwareTableModel<>(realColumns, displayColumns);
+
+        tableModel.setColumnFormatter(0, Client::getName);
+        tableModel.setColumnFormatter(1, client -> {
+            Passport passport = passportService.getPassportById(client.getPassportId());
+            return String.format("%s %s",
+                    passport.getSeries(),
+                    passport.getNumber());
+        });
 
         // Create table and add it to a scroll pane
         JTable table = new JTable(tableModel);
@@ -98,8 +109,8 @@ public class ManagerWindow extends BaseWindow {
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
                     // Use getIdForRow instead of getValueAt
-                    String clientId = tableModel.getIdForRow(selectedRow);
-                    clientService.deleteClient(clientId);
+                    Client client = tableModel.getEntityForRow(selectedRow);
+                    clientService.deleteClient(client.getId());
                     tableModel.removeRow(selectedRow);
                 }
             } else {
@@ -117,18 +128,19 @@ public class ManagerWindow extends BaseWindow {
         return panel;
     }
 
-    private void showAddClientDialog(UserFriendlyTableModel tableModel) {
+    private void showAddClientDialog(EntityAwareTableModel<Client> tableModel) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Client", true);
         JPanel form = new JPanel(new GridLayout(3, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JTextField nameField = new JTextField();
-        JTextField passportField = new JTextField();
+        List<Passport> passports = passportService.getAllPassports();
+        JComboBox<Passport> passportCombo = new JComboBox<>(passports.toArray(new Passport[0]));
 
         form.add(new JLabel("Name:"));
         form.add(nameField);
-        form.add(new JLabel("Passport ID:"));
-        form.add(passportField);
+        form.add(new JLabel("Passport Details:"));
+        form.add(passportCombo);
 
         JButton saveButton = new JButton("Save");
         JButton cancelButton = new JButton("Cancel");
@@ -138,16 +150,11 @@ public class ManagerWindow extends BaseWindow {
 
         saveButton.addActionListener(e -> {
             String name = nameField.getText().trim();
-            String passportId = passportField.getText().trim();
+            Passport passport = (Passport) passportCombo.getSelectedItem();
 
-            if (!name.isEmpty() && !passportId.isEmpty()) {
-                Client client = clientService.createClient(name, passportId);
-                // Use addRowWithId instead of addRow
-                tableModel.addRowWithId(new Object[]{
-                        client.getId(),
-                        client.getName(),
-                        client.getPassportId()
-                });
+            if (!name.isEmpty() && passport != null) {
+                Client client = clientService.createClient(name, passport.getId());
+                tableModel.addEntity(client, Client::getId);
                 dialog.dispose();
             } else {
                 JOptionPane.showMessageDialog(dialog, "Please fill in all fields");
@@ -162,22 +169,29 @@ public class ManagerWindow extends BaseWindow {
         dialog.setVisible(true);
     }
 
-    private void showEditClientDialog(UserFriendlyTableModel tableModel, int row) {
-        String clientId = tableModel.getIdForRow(row);
-        String currentName = (String) tableModel.getValueAt(row, 0);
-        String currentPassport = (String) tableModel.getValueAt(row, 1);
+    private void showEditClientDialog(EntityAwareTableModel<Client> tableModel, int row) {
+        Client client = tableModel.getEntityForRow(row);
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Edit Client", true);
         JPanel form = new JPanel(new GridLayout(3, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JTextField nameField = new JTextField(currentName);
-        JTextField passportField = new JTextField(currentPassport);
+        JTextField nameField = new JTextField(client.getName());
+
+        List<Passport> passports = passportService.getAllPassports();
+        JComboBox<Passport> passportCombo = new JComboBox<>(passports.toArray(new Passport[0]));
+
+        // Find and select the current passport
+        Passport currentPassport = passportService.getPassportById(client.getPassportId());
+
+        if (currentPassport != null) {
+            passportCombo.setSelectedItem(currentPassport);
+        }
 
         form.add(new JLabel("Name:"));
         form.add(nameField);
-        form.add(new JLabel("Passport ID:"));
-        form.add(passportField);
+        form.add(new JLabel("Passport Details:"));
+        form.add(passportCombo);
 
         JButton saveButton = new JButton("Save");
         JButton cancelButton = new JButton("Cancel");
@@ -187,17 +201,17 @@ public class ManagerWindow extends BaseWindow {
 
         saveButton.addActionListener(e -> {
             String name = nameField.getText().trim();
-            String passportId = passportField.getText().trim();
+            Passport passport = (Passport) passportCombo.getSelectedItem();
 
-            if (!name.isEmpty() && !passportId.isEmpty()) {
-                Client oldClient = clientService.getClientById(clientId);
-                Client client = new Client(name, passportId);
-                client.setId(clientId);
-                client.setSubscriptionIds(oldClient.getSubscriptionIds());
-                clientService.updateClient(client);
+            if (!name.isEmpty() && passport != null) {
+                Client updatedClient = new Client(name, passport.getId());
+                updatedClient.setId(client.getId());
+                updatedClient.setSubscriptionIds(client.getSubscriptionIds());
+                clientService.updateClient(updatedClient);
 
-                tableModel.setValueAt(name, row, 0);
-                tableModel.setValueAt(passportId, row, 1);
+                // Refresh the entire row
+                tableModel.removeRow(row);
+                tableModel.addEntity(updatedClient, Client::getId);
 
                 dialog.dispose();
             } else {
@@ -213,15 +227,11 @@ public class ManagerWindow extends BaseWindow {
         dialog.setVisible(true);
     }
 
-    private void refreshClientTable(UserFriendlyTableModel tableModel) {
+    private void refreshClientTable(EntityAwareTableModel<Client> tableModel) {
         tableModel.setRowCount(0);
         List<Client> clients = clientService.getAllClients();
         for (Client client : clients) {
-            tableModel.addRowWithId(new Object[]{
-                    client.getId(),
-                    client.getName(),
-                    client.getPassportId()
-            });
+            tableModel.addEntity(client, Client::getId);
         }
     }
 
@@ -229,9 +239,18 @@ public class ManagerWindow extends BaseWindow {
         JPanel panel = new JPanel(new BorderLayout());
 
         // Create table model with columns
-        String[] realColumns = new String[]{"ID", "Name", "Passport ID", "Phone"};
-        String[] displayColumns = new String[]{"Name", "Passport ID", "Phone"};
-        UserFriendlyTableModel tableModel = new UserFriendlyTableModel(realColumns, displayColumns);
+        String[] realColumns = new String[]{"ID", "Name", "Passport Details", "Phone"};
+        String[] displayColumns = new String[]{"Name", "Passport Details", "Phone"};
+        EntityAwareTableModel<Trainer> tableModel = new EntityAwareTableModel<>(realColumns, displayColumns);
+
+        tableModel.setColumnFormatter(0, Employee::getName);
+        tableModel.setColumnFormatter(1, trainer -> {
+            Passport passport = passportService.getPassportById(trainer.getPassportId());
+            return String.format("%s %s",
+                    passport.getSeries(),
+                    passport.getNumber());
+        });
+        tableModel.setColumnFormatter(2, Employee::getPhone);
 
         // Create table and add it to a scroll pane
         JTable table = new JTable(tableModel);
@@ -268,8 +287,8 @@ public class ManagerWindow extends BaseWindow {
                         JOptionPane.YES_NO_OPTION
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
-                    String trainerId = tableModel.getIdForRow(selectedRow);
-                    trainerService.deleteTrainer(trainerId);
+                    Trainer trainer = tableModel.getEntityForRow(selectedRow);
+                    trainerService.deleteTrainer(trainer.getId());
                     tableModel.removeRow(selectedRow);
                 }
             } else {
@@ -287,22 +306,24 @@ public class ManagerWindow extends BaseWindow {
         return panel;
     }
 
-    private void showAddTrainerDialog(UserFriendlyTableModel tableModel) {
+    private void showAddTrainerDialog(EntityAwareTableModel<Trainer> tableModel) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Trainer", true);
         JPanel form = new JPanel(new GridLayout(5, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JTextField nameField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
-        JTextField passportField = new JTextField();
         JTextField phoneField = new JTextField();
+
+        List<Passport> passports = passportService.getAllPassports();
+        JComboBox<Passport> passportCombo = new JComboBox<>(passports.toArray(new Passport[0]));
 
         form.add(new JLabel("Name:"));
         form.add(nameField);
         form.add(new JLabel("Password:"));
         form.add(passwordField);
-        form.add(new JLabel("Passport ID:"));
-        form.add(passportField);
+        form.add(new JLabel("Passports:"));
+        form.add(passportCombo);
         form.add(new JLabel("Phone:"));
         form.add(phoneField);
 
@@ -315,17 +336,13 @@ public class ManagerWindow extends BaseWindow {
         saveButton.addActionListener(e -> {
             String name = nameField.getText().trim();
             String password = new String(passwordField.getPassword()).trim();
-            String passportId = passportField.getText().trim();
+            Passport passport = (Passport) passportCombo.getSelectedItem();
             String phone = phoneField.getText().trim();
 
-            if (!name.isEmpty() && !password.isEmpty() && !passportId.isEmpty() && !phone.isEmpty()) {
-                Trainer trainer = trainerService.createTrainer(name, password, passportId, phone);
-                tableModel.addRowWithId(new Object[]{
-                        trainer.getId(),
-                        trainer.getName(),
-                        trainer.getPassportId(),
-                        trainer.getPhone()
-                });
+            if (!name.isEmpty() && !password.isEmpty() && passport != null && !phone.isEmpty()) {
+                Trainer trainer = trainerService.createTrainer(name, password, passport.getId(), phone);
+
+                tableModel.addEntity(trainer, Trainer::getId);
                 dialog.dispose();
             } else {
                 JOptionPane.showMessageDialog(dialog, "Please fill in all fields");
@@ -341,24 +358,31 @@ public class ManagerWindow extends BaseWindow {
         dialog.setVisible(true);
     }
 
-    private void showEditTrainerDialog(UserFriendlyTableModel  tableModel, int row) {
-        String trainerId = tableModel.getIdForRow(row);
-        String currentName = (String) tableModel.getValueAt(row, 0);
-        String currentPassport = (String) tableModel.getValueAt(row, 1);
-        String currentPhone = (String) tableModel.getValueAt(row, 2);
+    private void showEditTrainerDialog(EntityAwareTableModel<Trainer> tableModel, int row) {
+        Trainer trainer = tableModel.getEntityForRow(row);
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Edit Trainer", true);
         JPanel form = new JPanel(new GridLayout(4, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JTextField nameField = new JTextField(currentName);
-        JTextField passportField = new JTextField(currentPassport);
-        JTextField phoneField = new JTextField(currentPhone);
+        JTextField nameField = new JTextField(trainer.getName());
+        JTextField phoneField = new JTextField(trainer.getPhone());
+
+        // Get all passports and create combo box
+        List<Passport> passports = passportService.getAllPassports();
+        JComboBox<Passport> passportCombo = new JComboBox<>(passports.toArray(new Passport[0]));
+
+        // Find and select the current passport
+        Passport currentPassport = passportService.getPassportById(trainer.getPassportId());
+
+        if (currentPassport != null) {
+            passportCombo.setSelectedItem(currentPassport);
+        }
 
         form.add(new JLabel("Name:"));
         form.add(nameField);
-        form.add(new JLabel("Passport ID:"));
-        form.add(passportField);
+        form.add(new JLabel("Passport:"));
+        form.add(passportCombo);
         form.add(new JLabel("Phone:"));
         form.add(phoneField);
 
@@ -370,20 +394,24 @@ public class ManagerWindow extends BaseWindow {
 
         saveButton.addActionListener(e -> {
             String name = nameField.getText().trim();
-            String passportId = passportField.getText().trim();
+            Passport passport = (Passport) passportCombo.getSelectedItem();
             String phone = phoneField.getText().trim();
 
-            if (!name.isEmpty() && !passportId.isEmpty() && !phone.isEmpty()) {
-                Trainer oldTrainer = trainerService.getTrainerById(trainerId);
-                Trainer trainer = new Trainer(name, passportId, phone);
-                trainer.setId(trainerId);
-                trainer.setTrainingClassIds(oldTrainer.getTrainingClassIds());
-                trainer.setPassword(oldTrainer.getPassword());
-                trainerService.updateTrainer(trainer);
+            if (!name.isEmpty() && passport != null && !phone.isEmpty()) {
+                // Create new trainer instance with updated values
+                Trainer updatedTrainer = new Trainer(name, passport.getId(), phone);
+                updatedTrainer.setId(trainer.getId());
 
-                tableModel.setValueAt(name, row, 0);
-                tableModel.setValueAt(passportId, row, 1);
-                tableModel.setValueAt(phone, row, 2);
+                // Copy over values that shouldn't change
+                updatedTrainer.setTrainingClassIds(trainer.getTrainingClassIds());
+                updatedTrainer.setPassword(trainer.getPassword());
+
+                // Update in service
+                trainerService.updateTrainer(updatedTrainer);
+
+                // Update table - remove and add to refresh all formatted values
+                tableModel.removeRow(row);
+                tableModel.addEntity(updatedTrainer, Trainer::getId);
 
                 dialog.dispose();
             } else {
@@ -399,16 +427,12 @@ public class ManagerWindow extends BaseWindow {
         dialog.setVisible(true);
     }
 
-    private void refreshTrainerTable(UserFriendlyTableModel tableModel) {
+
+    private void refreshTrainerTable(EntityAwareTableModel<Trainer> tableModel) {
         tableModel.setRowCount(0);
         List<Trainer> trainers = trainerService.getAllTrainers();
         for (Trainer trainer : trainers) {
-            tableModel.addRowWithId(new Object[]{
-                    trainer.getId(),
-                    trainer.getName(),
-                    trainer.getPassportId(),
-                    trainer.getPhone()
-            });
+            tableModel.addEntity(trainer, Trainer::getId);
         }
     }
 
@@ -416,15 +440,20 @@ public class ManagerWindow extends BaseWindow {
         JPanel panel = new JPanel(new BorderLayout());
 
         // Create table model with columns
-        DefaultTableModel tableModel = new DefaultTableModel(
-                new String[]{"ID", "Dance Type", "Level", "Trainer", "Client"},
-                0
-        ) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        String[] realColumns = new String[]{"ID", "Dance Type", "Level", "Trainer", "Client"};
+        String[] displayColumns = new String[]{"Dance Type", "Level", "Trainer", "Client"};
+        EntityAwareTableModel<TrainingClass> tableModel = new EntityAwareTableModel<>(realColumns, displayColumns);
+
+        tableModel.setColumnFormatter(0, TrainingClass::getDanceType);
+        tableModel.setColumnFormatter(1, trainingClass -> trainingClass.getLevel().toString());
+        tableModel.setColumnFormatter(2, trainingClass -> {
+            Trainer trainer = trainerService.getTrainerById(trainingClass.getTrainerId());
+            return trainer.toString();
+        });
+        tableModel.setColumnFormatter(3, trainingClass -> {
+            Client trainer = clientService.getClientById(trainingClass.getClientId());
+            return trainer.toString();
+        });
 
         // Create table and add it to a scroll pane
         JTable table = new JTable(tableModel);
@@ -460,22 +489,16 @@ public class ManagerWindow extends BaseWindow {
         return panel;
     }
 
-    private void refreshClassesTable(DefaultTableModel tableModel) {
+    private void refreshClassesTable(EntityAwareTableModel<TrainingClass> tableModel) {
         tableModel.setRowCount(0);
         var classes = trainingClassService.getAllClasses();
         for (TrainingClass trainingClass : classes) {
-            tableModel.addRow(new Object[]{
-                    trainingClass.getId(),
-                    trainingClass.getDanceType(),
-                    trainingClass.getLevel(),
-                    trainingClass.getTrainerId(),
-                    trainingClass.getClientId()
-            });
+            tableModel.addEntity(trainingClass, TrainingClass::getId);
         }
     }
 
 
-    private void showAddClassDialog(DefaultTableModel tableModel) {
+    private void showAddClassDialog(EntityAwareTableModel<TrainingClass> tableModel) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Class", true);
         JPanel form = new JPanel(new GridLayout(5, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -514,13 +537,7 @@ public class ManagerWindow extends BaseWindow {
                 TrainingClass training = trainingClassService.createTraining(
                         danceType, level, trainer.getId(), client.getId());
 
-                tableModel.addRow(new Object[]{
-                        training.getId(),
-                        training.getDanceType(),
-                        training.getLevel(),
-                        trainer.getName(),
-                        client.getName()
-                });
+                tableModel.addEntity(training, TrainingClass::getId);
                 dialog.dispose();
             } else {
                 JOptionPane.showMessageDialog(dialog, "Please fill in all fields");
@@ -535,12 +552,12 @@ public class ManagerWindow extends BaseWindow {
         dialog.setVisible(true);
     }
 
-    private void showAssignTrainerDialog(DefaultTableModel tableModel, int row) {
+    private void showAssignTrainerDialog(EntityAwareTableModel<TrainingClass> tableModel, int row) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Assign Trainer", true);
         JPanel form = new JPanel(new GridLayout(2, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        String classId = (String) tableModel.getValueAt(row, 0);
+        TrainingClass training = tableModel.getEntityForRow(row);
 
         // Get trainers and create combo box
         List<Trainer> trainers = trainerService.getAllTrainers();
@@ -558,8 +575,11 @@ public class ManagerWindow extends BaseWindow {
         saveButton.addActionListener(e -> {
             Trainer selectedTrainer = (Trainer) trainerCombo.getSelectedItem();
             if (selectedTrainer != null) {
-                trainingClassService.assignTrainerToClass(classId, selectedTrainer.getId());
-                tableModel.setValueAt(selectedTrainer.getName(), row, 4); // Update trainer name in table
+                trainingClassService.assignTrainerToClass(training.getId(), selectedTrainer.getId());
+
+                tableModel.removeRow(row);
+                tableModel.addEntity(training, TrainingClass::getId);
+
                 dialog.dispose();
             } else {
                 JOptionPane.showMessageDialog(dialog, "Please select a trainer");
@@ -578,15 +598,29 @@ public class ManagerWindow extends BaseWindow {
         JPanel panel = new JPanel(new BorderLayout());
 
         // Create table model with columns
-        DefaultTableModel tableModel = new DefaultTableModel(
-                new String[]{"ID", "Client", "Class", "Start Date", "End Date", "Paid"},
-                0
-        ) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        String[] realColumns = new String[]{"ID", "Client", "Class", "Start Date", "End Date", "Paid"};
+        String[] displayColumns = new String[]{"Client", "Class", "Start Date", "End Date", "Paid"};
+        EntityAwareTableModel<Subscription> tableModel = new EntityAwareTableModel<>(realColumns, displayColumns);
+
+        tableModel.setColumnFormatter(0, subscription -> {
+            Client client = clientService.getClientById(subscription.getClientId());
+            return client.getName();
+        });
+
+        tableModel.setColumnFormatter(1, subscription -> {
+            TrainingClass trainingClass = trainingClassService.getTrainingClass(subscription.getTrainingClassId());
+            return trainingClass.getDanceType();
+        });
+
+        tableModel.setColumnFormatter(2, subscription ->
+                subscription.getStartDate().toString());
+
+        tableModel.setColumnFormatter(3, subscription ->
+                subscription.getEndDate().toString());
+
+        tableModel.setColumnFormatter(4, subscription ->
+                Boolean.toString(subscription.isPaid()));
+
 
         // Create table and add it to a scroll pane
         JTable table = new JTable(tableModel);
@@ -606,12 +640,13 @@ public class ManagerWindow extends BaseWindow {
         togglePaidButton.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow != -1) {
-                boolean currentPaidStatus = (boolean) tableModel.getValueAt(selectedRow, 5);
-                tableModel.setValueAt(!currentPaidStatus, selectedRow, 5);
-                String subscriptionId = (String) tableModel.getValueAt(selectedRow, 0);
-                Subscription subscription = subscriptionService.getById(subscriptionId);
-                subscription.setPaid(!currentPaidStatus);
+                Subscription subscription = tableModel.getEntityForRow(selectedRow);
+                subscription.setPaid(!subscription.isPaid());
                 subscriptionService.updateSubscription(subscription);
+
+                // Refresh the row
+                tableModel.removeRow(selectedRow);
+                tableModel.addEntity(subscription, Subscription::getId);
             } else {
                 JOptionPane.showMessageDialog(panel, "Please select a subscription");
             }
@@ -626,22 +661,15 @@ public class ManagerWindow extends BaseWindow {
         return panel;
     }
 
-    private void refreshSubscriptionTable(DefaultTableModel tableModel) {
+    private void refreshSubscriptionTable(EntityAwareTableModel<Subscription> tableModel) {
         tableModel.setRowCount(0);
-        var subscriptions = subscriptionService.getAll();
+        List<Subscription> subscriptions = subscriptionService.getAll();
         for (Subscription subscription : subscriptions) {
-            tableModel.addRow(new Object[]{
-                    subscription.getId(),
-                    subscription.getClientId(),
-                    subscription.getTrainingClassId(),
-                    subscription.getStartDate(),
-                    subscription.getEndDate(),
-                    subscription.isPaid()
-            });
+            tableModel.addEntity(subscription, Subscription::getId);
         }
     }
 
-    private void showAddSubscriptionDialog(DefaultTableModel tableModel) {
+    private void showAddSubscriptionDialog(EntityAwareTableModel<Subscription> tableModel) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Subscription", true);
         JPanel form = new JPanel(new GridLayout(6, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -696,14 +724,7 @@ public class ManagerWindow extends BaseWindow {
                             isPaid
                     );
 
-                    tableModel.addRow(new Object[]{
-                            subscription.getId(),
-                            client.getName(),
-                            trainingClass.getDanceType(),
-                            startDate.toString(),
-                            endDate.toString(),
-                            isPaid
-                    });
+                    tableModel.addEntity(subscription, Subscription::getId);
 
                     dialog.dispose();
                 } catch (Exception ex) {

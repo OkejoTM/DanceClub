@@ -11,18 +11,5 @@
       "2024-02-10",
       "2024-02-17"
     ]
-  },
-  "bbb1058f-fdaf-4fa0-acb2-e64b7e6e8db4": {
-    "id": "bbb1058f-fdaf-4fa0-acb2-e64b7e6e8db4",
-    "clientId": "6db7058f-fdaf-4fa0-acb2-e64b7e6e8db4",
-    "trainingClassId": "ccc1058f-fdaf-4fa0-acb2-e64b7e6e8db4",
-    "startDate": "2024-01-01",
-    "endDate": "2024-06-01",
-    "isPaid": true,
-    "attendanceDates": [
-      "2024-01-03",
-      "2024-01-10",
-      "2024-01-17"
-    ]
   }
 }

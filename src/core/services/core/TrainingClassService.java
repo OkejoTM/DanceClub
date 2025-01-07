@@ -52,6 +52,11 @@ public class TrainingClassService {
     public void assignTrainerToClass(String classId, String trainerId) {
         TrainingClass training = getTrainingClass(classId);
         training.setTrainerId(trainerId);
+
+        Trainer trainer = trainerStorage.getById(trainerId);
+        trainer.addTrainingClass(training.getId());
+        
+        trainerStorage.save(trainer);
         trainingClassStorageService.save(training);
     }
 }

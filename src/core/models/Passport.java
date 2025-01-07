@@ -83,5 +83,10 @@ public class Passport {
     public void setOverdue(LocalDate overdue) {
         this.overdue = overdue;
     }
+
+    @Override
+    public String toString() {
+        return getSeries() + getNumber();
+    }
 }
 
