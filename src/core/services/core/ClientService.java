@@ -39,7 +39,7 @@ public class ClientService {
         return classIds.stream()
                 .map(trainingClassService::getTrainingClass)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // Methods for Managers to manage clients

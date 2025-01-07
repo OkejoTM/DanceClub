@@ -6,6 +6,7 @@ import core.services.storage.ClientStorageService;
 import core.services.storage.SubscriptionStorageService;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class SubscriptionService {
     private final SubscriptionStorageService subscriptionStorage;
@@ -54,4 +55,13 @@ public class SubscriptionService {
             subscriptionStorage.delete(subscriptionId);
         }
     }
+
+    public List<Subscription> getAll(){
+        return subscriptionStorage.getAll();
+    }
+
+    public Subscription getById(String id){
+        return subscriptionStorage.getById(id);
+    }
+
 }

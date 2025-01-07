@@ -93,6 +93,11 @@ public class TrainingClass {
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
+
+    @Override
+    public String toString() {
+        return getDanceType();
+    }
 }
 
 

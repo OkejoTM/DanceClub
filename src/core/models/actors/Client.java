@@ -71,4 +71,9 @@ public class Client {
         }
         this.subscriptionIds.add(subscriptionId);
     }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }
