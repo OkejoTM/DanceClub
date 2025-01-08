@@ -1,11 +1,16 @@
 {
+  "df1c1d57-1ff9-4b27-b26c-45cf917c3bec": {
+    "id": "df1c1d57-1ff9-4b27-b26c-45cf917c3bec",
+    "name": "test_client",
+    "passportId": "fb133049-bf5a-4486-95c6-271bf19874da",
+    "subscriptionIds": []
+  },
   "6db7058f-fdaf-4fa0-acb2-e64b7e6e8db4": {
     "id": "6db7058f-fdaf-4fa0-acb2-e64b7e6e8db4",
     "name": "Jane Smith",
-    "passportId": "aaa7058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+    "passportId": "aaa4058f-fdaf-4fa0-acb2-e64b7e6e8db4",
     "subscriptionIds": [
-      "bbb1058f-fdaf-4fa0-acb2-e64b7e6e8db4",
-      "bbb2058f-fdaf-4fa0-acb2-e64b7e6e8db4"
+      "bbb1058f-fdaf-4fa0-acb2-e64b7e6e8db4"
     ]
   }
 }

@@ -1,7 +1,10 @@
 package ui.users;
 
 import core.models.base.TrainingClass;
+import core.services.core.SubscriptionService;
 import core.services.core.TrainingClassService;
+import core.services.storage.ClientStorageService;
+import core.services.storage.SubscriptionStorageService;
 import core.services.storage.TrainerStorageService;
 import core.services.storage.TrainingClassStorageService;
 import ui.users.base.BaseWindow;
@@ -21,7 +24,9 @@ public class TrainerWindow extends BaseWindow {
 
         this.trainingClassService = new TrainingClassService(
                 new TrainerStorageService(),
-                new TrainingClassStorageService()
+                new TrainingClassStorageService(),
+                new SubscriptionService(new SubscriptionStorageService(),
+                        new ClientStorageService())
         );
 
         tabbedPane = new JTabbedPane();

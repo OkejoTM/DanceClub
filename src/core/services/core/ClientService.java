@@ -8,7 +8,6 @@ import core.services.storage.SubscriptionStorageService;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class ClientService {
     private final ClientStorageService clientStorage;
@@ -53,14 +52,14 @@ public class ClientService {
         clientStorage.save(client);
     }
 
-    public void deleteClient(String clientId) {
+    public void deleteClient(Client client) {
         // First delete all client's subscriptions
-        List<Subscription> subscriptions = getClientSubscriptions(clientId);
+        List<Subscription> subscriptions = getClientSubscriptions(client.getId());
         for (Subscription subscription : subscriptions) {
             subscriptionStorage.delete(subscription.getId());
         }
 
-        clientStorage.delete(clientId);
+        clientStorage.delete(client.getId());
     }
 
     public List<Client> getAllClients() {

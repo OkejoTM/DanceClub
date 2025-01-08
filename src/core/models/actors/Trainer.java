@@ -36,6 +36,10 @@ public class Trainer extends Employee {
         this.trainingClassIds.add(trainingClassId);
     }
 
+    public void removeTrainingClass(String trainingClassId){
+        this.trainingClassIds.remove(trainingClassId);
+    }
+
     @Override
     public String toString() {
         return getName();

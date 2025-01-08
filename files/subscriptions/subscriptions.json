@@ -5,7 +5,7 @@
     "trainingClassId": "ccc2058f-fdaf-4fa0-acb2-e64b7e6e8db4",
     "startDate": "2024-01-01",
     "endDate": "2024-06-01",
-    "isPaid": false,
+    "isPaid": true,
     "attendanceDates": [
       "2024-02-03",
       "2024-02-10",

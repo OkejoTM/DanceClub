@@ -3,7 +3,6 @@ package core.services.core;
 import core.models.Passport;
 import core.services.storage.PassportStorageService;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public class PassportService {
@@ -24,9 +23,9 @@ public class PassportService {
         return passportStorageService.getAll();
     }
 
-    public void deletePassport(String id)
+    public void deletePassport(Passport passport)
     {
-        passportStorageService.delete(id);
+        passportStorageService.delete(passport.getId());
     }
 
     public void updatePassport(Passport passport)
@@ -34,11 +33,9 @@ public class PassportService {
         passportStorageService.save(passport);
     }
 
-    public Passport createPassport(String address, LocalDate birthDate, String number, String series, LocalDate overdue){
-        Passport passport = new Passport(address, birthDate, number, series, overdue);
+    public void createPassport(Passport passport)
+    {
         passportStorageService.save(passport);
-        return passport;
     }
-    
 
 }

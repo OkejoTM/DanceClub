@@ -43,16 +43,15 @@ public class SubscriptionService {
         subscriptionStorage.save(subscription);
     }
 
-    public void deleteSubscription(String subscriptionId) {
-        Subscription subscription = subscriptionStorage.getById(subscriptionId);
+    public void deleteSubscription(Subscription subscription) {
         if (subscription != null) {
             // Remove subscription from client's list
             Client client = clientStorage.getById(subscription.getClientId());
             if (client != null) {
-                client.getSubscriptionIds().remove(subscriptionId);
+                client.getSubscriptionIds().remove(subscription.getId());
                 clientStorage.save(client);
             }
-            subscriptionStorage.delete(subscriptionId);
+            subscriptionStorage.delete(subscription.getId());
         }
     }
 
@@ -62,6 +61,14 @@ public class SubscriptionService {
 
     public Subscription getById(String id){
         return subscriptionStorage.getById(id);
+    }
+
+    public Subscription getSubscriptionByClientIdAndTrainingClassId(String clientId, String trainingClassId){
+        return subscriptionStorage.getAll().stream()
+                .filter(subscription -> subscription.getClientId().equals(clientId) &&
+                        subscription.getTrainingClassId().equals(trainingClassId))
+                .findFirst()
+                .orElse(null);
     }
 
 }

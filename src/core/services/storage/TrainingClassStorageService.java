@@ -10,7 +10,7 @@ public class TrainingClassStorageService extends JsonStorageService<TrainingClas
     }
 
     @Override
-    protected String getId(TrainingClass entity) {
-        return "";
+    protected String getId(TrainingClass trainingClass) {
+        return trainingClass.getId();
     }
 }

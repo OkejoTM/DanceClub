@@ -1,5 +1,6 @@
 package core.services.core;
 
+import core.models.Subscription;
 import core.models.actors.Trainer;
 import core.models.base.TrainingClass;
 import core.models.enums.TrainingLevel;
@@ -12,12 +13,15 @@ import java.util.List;
 public class TrainingClassService {
     private final TrainingClassStorageService trainingClassStorageService;
     private final TrainerStorageService trainerStorage;
+    private final SubscriptionService subscriptionService;
 
     public TrainingClassService(
             TrainerStorageService trainerStorage,
-            TrainingClassStorageService trainingClassStorageService) {
+            TrainingClassStorageService trainingClassStorageService,
+            SubscriptionService subscriptionService) {
         this.trainingClassStorageService = trainingClassStorageService;
         this.trainerStorage = trainerStorage;
+        this.subscriptionService = subscriptionService;
     }
 
     public TrainingClass getTrainingClass(String classId) {
@@ -58,5 +62,20 @@ public class TrainingClassService {
         
         trainerStorage.save(trainer);
         trainingClassStorageService.save(training);
+    }
+
+    public void deleteTrainingClass(TrainingClass trainingClass){
+        Trainer trainer = trainerStorage.getById(trainingClass.getTrainerId());
+        trainer.removeTrainingClass(trainingClass.getId());
+        trainerStorage.save(trainer);
+
+        Subscription subscription = subscriptionService.getSubscriptionByClientIdAndTrainingClassId(trainingClass.getClientId(), trainingClass.getId());
+        subscriptionService.deleteSubscription(subscription);
+
+        trainingClassStorageService.delete(trainingClass.getId());
+    }
+
+    public void updateTrainingClass(TrainingClass trainingClass) {
+        trainingClassStorageService.save(trainingClass);
     }
 }

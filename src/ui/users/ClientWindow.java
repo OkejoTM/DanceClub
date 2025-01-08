@@ -3,6 +3,7 @@ package ui.users;
 import core.models.Subscription;
 import core.models.base.TrainingClass;
 import core.services.core.ClientService;
+import core.services.core.SubscriptionService;
 import core.services.core.TrainingClassService;
 import core.services.storage.*;
 import ui.users.base.BaseWindow;
@@ -24,7 +25,10 @@ public class ClientWindow extends BaseWindow {
                 new SubscriptionStorageService(),
                 new TrainingClassService(
                         new TrainerStorageService(),
-                        new TrainingClassStorageService()
+                        new TrainingClassStorageService(),
+                        new SubscriptionService(
+                                new SubscriptionStorageService(),
+                                new ClientStorageService())
                 )
         );
 
