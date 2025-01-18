@@ -1,12 +1,14 @@
 package ui.users;
 
+import core.models.Passport;
 import core.models.Subscription;
+import core.models.actors.Client;
+import core.models.actors.Trainer;
 import core.models.base.TrainingClass;
-import core.services.core.ClientService;
-import core.services.core.SubscriptionService;
-import core.services.core.TrainingClassService;
+import core.services.core.*;
 import core.services.storage.*;
 import ui.users.base.BaseWindow;
+import ui.utils.EntityAwareTableModel;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -15,21 +17,42 @@ import java.util.List;
 
 public class ClientWindow extends BaseWindow {
     private final ClientService clientService;
+    private final TrainerService trainerService;
     private final JTabbedPane tabbedPane;
 
     public ClientWindow(String clientId) {
         super("Client Dashboard", clientId);
+        SubscriptionStorageService subscriptionStorageService = new SubscriptionStorageService();
+        ClientStorageService clientStorageService = new ClientStorageService();
+        TrainerStorageService trainerStorageService= new TrainerStorageService();
+        TrainingClassStorageService trainingClassStorageService = new TrainingClassStorageService();
+        PassportStorageService passportStorageService = new PassportStorageService();
+
+        var subscriptionService = new SubscriptionService(
+                subscriptionStorageService,
+                clientStorageService
+        );
+
+        var trainingClassService = new TrainingClassService(
+                trainerStorageService,
+                trainingClassStorageService,
+                subscriptionService
+        );
+
+        var passportService = new PassportService(passportStorageService);
+
+        this.trainerService = new TrainerService(
+                trainerStorageService,
+                trainingClassService,
+                passportService
+        );
 
         this.clientService = new ClientService(
-                new ClientStorageService(),
-                new SubscriptionStorageService(),
-                new TrainingClassService(
-                        new TrainerStorageService(),
-                        new TrainingClassStorageService(),
-                        new SubscriptionService(
-                                new SubscriptionStorageService(),
-                                new ClientStorageService())
-                )
+                clientStorageService,
+                subscriptionStorageService,
+                trainingClassService,
+                this.trainerService,
+                passportService
         );
 
         tabbedPane = new JTabbedPane();
@@ -42,51 +65,63 @@ public class ClientWindow extends BaseWindow {
     private JPanel createSubscriptionsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
-        // Create table model for subscriptions
-        DefaultTableModel model = new DefaultTableModel();
-        model.addColumn("ID");
-        model.addColumn("Start Date");
-        model.addColumn("End Date");
-        model.addColumn("Paid");
+        // Create table model with columns
+        String[] realColumns = new String[]{"ID", "Start Date", "End Date", "Paid"};
+        String[] displayColumns = new String[]{"Start Date", "End Date", "Paid"};
+        EntityAwareTableModel<Subscription> tableModel = new EntityAwareTableModel<>(realColumns, displayColumns);
 
-        JTable table = new JTable(model);
+        // Set up column formatters
+        tableModel.setColumnFormatter(0, subscription ->
+                subscription.getStartDate().toString());
+        tableModel.setColumnFormatter(1, subscription ->
+                subscription.getEndDate().toString());
+        tableModel.setColumnFormatter(2, subscription ->
+                subscription.isPaid() ? "Yes" : "No");
+
+        // Create table and add it to a scroll pane
+        JTable table = new JTable(tableModel);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane scrollPane = new JScrollPane(table);
 
         // Load subscriptions
         List<Subscription> subscriptions = clientService.getClientSubscriptions(userId);
-        for (Subscription sub : subscriptions) {
-            model.addRow(new Object[]{
-                    sub.getId(),
-                    sub.getStartDate(),
-                    sub.getEndDate(),
-                    sub.isPaid() ? "Yes" : "No"
-            });
+        for (Subscription subscription : subscriptions) {
+            tableModel.addEntity(subscription, Subscription::getId);
         }
 
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+        panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
     }
 
     private JPanel createClassesPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
-        // Create table model for classes
-        DefaultTableModel model = new DefaultTableModel();
-        model.addColumn("Dance Type");
-        model.addColumn("Level");
+        // Create table model with columns
+        String[] realColumns = new String[]{"ID", "Dance Type", "Level", "Trainer"};
+        String[] displayColumns = new String[]{"Dance Type", "Level", "Trainer"};
+        EntityAwareTableModel<TrainingClass> tableModel = new EntityAwareTableModel<>(realColumns, displayColumns);
 
-        JTable table = new JTable(model);
+        // Set up column formatters
+        tableModel.setColumnFormatter(0, TrainingClass::getDanceType);
+        tableModel.setColumnFormatter(1, trainingClass ->
+                trainingClass.getLevel().toString());
+        tableModel.setColumnFormatter(2, trainingClass -> {
+            Trainer trainer = trainerService.getTrainerById(trainingClass.getTrainerId());
+            return trainer != null ? trainer.getName() : "Not Assigned";
+        });
+
+        // Create table and add it to a scroll pane
+        JTable table = new JTable(tableModel);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane scrollPane = new JScrollPane(table);
 
         // Load classes
         List<TrainingClass> classes = clientService.getClientClasses(userId);
-        for (TrainingClass cls : classes) {
-            model.addRow(new Object[]{
-                    cls.getDanceType(),
-                    cls.getLevel()
-            });
+        for (TrainingClass trainingClass : classes) {
+            tableModel.addEntity(trainingClass, TrainingClass::getId);
         }
 
-        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+        panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
     }
 }
-

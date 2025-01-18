@@ -40,13 +40,11 @@ public class ManagerWindow extends BaseWindow {
         TrainingClassStorageService trainingClassStorageService = new TrainingClassStorageService();
         PassportStorageService passportStorageService = new PassportStorageService();
 
+        this.passportService = new PassportService(passportStorageService);
+
         this.subscriptionService = new SubscriptionService(
                 subscriptionStorageService,
                 clientStorageService
-        );
-
-        this.trainerService = new TrainerService(
-                trainerStorageService
         );
 
         TrainingClassService trainingClassService = new TrainingClassService(
@@ -55,15 +53,21 @@ public class ManagerWindow extends BaseWindow {
                 subscriptionService
         );
 
+        this.trainerService = new TrainerService(
+                trainerStorageService,
+                trainingClassService,
+                passportService
+        );
+
         this.trainingClassService = trainingClassService;
 
         this.clientService = new ClientService(
                 clientStorageService,
                 subscriptionStorageService,
-                trainingClassService
+                trainingClassService,
+                this.trainerService,
+                this.passportService
         );
-
-        this.passportService = new PassportService(passportStorageService);
 
         this.passportManagementService = new PassportManagementService(
                 this.clientService,

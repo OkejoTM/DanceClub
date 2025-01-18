@@ -16,5 +16,13 @@
     "password": "1234",
     "passportId": "521cce7c-6e93-435a-b20b-6ef4ed8c7eae",
     "phone": "1234"
+  },
+  "19d15d15-dc44-4677-a9c7-9890ddc5d3c5": {
+    "trainingClassIds": [],
+    "id": "19d15d15-dc44-4677-a9c7-9890ddc5d3c5",
+    "name": "TEST_TRAINER",
+    "password": "t",
+    "passportId": "aaa7058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+    "phone": "228"
   }
 }

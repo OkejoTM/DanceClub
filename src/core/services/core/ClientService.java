@@ -2,6 +2,7 @@ package core.services.core;
 
 import core.models.Subscription;
 import core.models.actors.Client;
+import core.models.actors.Trainer;
 import core.models.base.TrainingClass;
 import core.services.storage.ClientStorageService;
 import core.services.storage.SubscriptionStorageService;
@@ -13,14 +14,18 @@ public class ClientService {
     private final ClientStorageService clientStorage;
     private final SubscriptionStorageService subscriptionStorage;
     private final TrainingClassService trainingClassService;
+    private final TrainerService trainerService;
+    private final PassportService passportService;
 
     public ClientService(
             ClientStorageService clientStorage,
             SubscriptionStorageService subscriptionStorage,
-            TrainingClassService trainingClassService) {
+            TrainingClassService trainingClassService, TrainerService trainerService, PassportService passportService) {
         this.clientStorage = clientStorage;
         this.subscriptionStorage = subscriptionStorage;
         this.trainingClassService = trainingClassService;
+        this.trainerService = trainerService;
+        this.passportService = passportService;
     }
 
     // Methods for Clients to view their data
@@ -53,11 +58,24 @@ public class ClientService {
     }
 
     public void deleteClient(Client client) {
-        // First delete all client's subscriptions
         List<Subscription> subscriptions = getClientSubscriptions(client.getId());
+        List<TrainingClass> classes = getClientClasses(client.getId());
+
+        for (TrainingClass trainingClass : classes) {
+            // Remove class from trainer's list
+            Trainer trainer = trainerService.getTrainerById(trainingClass.getTrainerId());
+            if (trainer != null) {
+                trainer.removeTrainingClass(trainingClass.getId());
+                trainerService.updateTrainer(trainer);
+            }
+            trainingClassService.deleteTrainingClass(trainingClass);
+        }
+
         for (Subscription subscription : subscriptions) {
             subscriptionStorage.delete(subscription.getId());
         }
+
+        passportService.deletePassport(passportService.getPassportById(client.getPassportId()));
 
         clientStorage.delete(client.getId());
     }
