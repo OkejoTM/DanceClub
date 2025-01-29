@@ -59,10 +59,6 @@ public class SubscriptionService {
         return subscriptionStorage.getAll();
     }
 
-    public Subscription getById(String id){
-        return subscriptionStorage.getById(id);
-    }
-
     public Subscription getSubscriptionByClientIdAndTrainingClassId(String clientId, String trainingClassId){
         return subscriptionStorage.getAll().stream()
                 .filter(subscription -> subscription.getClientId().equals(clientId) &&

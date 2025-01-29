@@ -1,10 +1,26 @@
 {
+  "629fa1ec-d579-4471-a8dd-7dabc33e5b81": {
+    "id": "629fa1ec-d579-4471-a8dd-7dabc33e5b81",
+    "danceType": "1",
+    "level": "BEGINNER",
+    "trainerId": "ddd1058f-fdaf-4fa0-acb2-e64b7e6e8db4",
+    "clientId": "df1c1d57-1ff9-4b27-b26c-45cf917c3bec",
+    "schedule": "1, 2, 3"
+  },
+  "54104e56-76e7-446d-bdf0-66f4b0f708b7": {
+    "id": "54104e56-76e7-446d-bdf0-66f4b0f708b7",
+    "danceType": "BBBB",
+    "level": "INTERMEDIATE",
+    "trainerId": "35ec4d55-3493-4c25-aa50-cd60ad257599",
+    "clientId": "df1c1d57-1ff9-4b27-b26c-45cf917c3bec",
+    "schedule": "Вторник, Thursday, Saturday"
+  },
   "ccc2058f-fdaf-4fa0-acb2-e64b7e6e8db4": {
     "id": "ccc2058f-fdaf-4fa0-acb2-e64b7e6e8db4",
     "danceType": "AA",
     "level": "BEGINNER",
     "trainerId": "ddd1058f-fdaf-4fa0-acb2-e64b7e6e8db4",
     "clientId": "6db7058f-fdaf-4fa0-acb2-e64b7e6e8db4",
-    "schedule": []
+    "schedule": "Monday, Wednesday, Friday"
   }
 }

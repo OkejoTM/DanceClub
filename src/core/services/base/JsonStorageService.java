@@ -16,8 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class JsonStorageService<T> {
     protected final Gson gson;
     protected final String dataFolder;
-    protected final Class<T> typeParameterClass;
-    protected Map<String, T> entities;
+    protected final Class<T> typeParameterClass; // Классы
+    protected Map<String, T> entities; // Словарик сущностей, для того чтобы каждый раз не обращаться к IO-операциям.
     private final Object fileLock = new Object();
 
     public JsonStorageService(Class<T> typeParameterClass, String dataFolder) {
@@ -42,7 +42,10 @@ public abstract class JsonStorageService<T> {
         if (!file.exists()) {
             return;
         }
-
+        /*
+        * Береться стрим файла, и потом в mapType подбирается тип модели. (Client)
+        * gson.fromJson() -> читает файл и мапит данные в модельку. (подставляет данные из файла в модель)
+        * */
         try (FileReader reader = new FileReader(file)) {
             // Create a type that tells Gson exactly what to deserialize into
             Type mapType = TypeToken.getParameterized(HashMap.class, String.class, typeParameterClass).getType();
@@ -71,13 +74,6 @@ public abstract class JsonStorageService<T> {
         saveData();
     }
 
-    public void saveAll(List<T> entityList) {
-        for (T entity : entityList) {
-            entities.put(getId(entity), entity);
-        }
-        saveData();
-    }
-
     public T getById(String id) {
         return entities.get(id);
     }
@@ -88,11 +84,6 @@ public abstract class JsonStorageService<T> {
 
     public void delete(String id) {
         entities.remove(id);
-        saveData();
-    }
-
-    public void deleteAll() {
-        entities.clear();
         saveData();
     }
 

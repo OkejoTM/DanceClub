@@ -18,6 +18,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ManagerWindow extends BaseWindow {
     private final TrainerService trainerService;
@@ -137,7 +138,6 @@ public class ManagerWindow extends BaseWindow {
                         JOptionPane.YES_NO_OPTION
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
-                    // Use getIdForRow instead of getValueAt
                     Client client = tableModel.getEntityForRow(selectedRow);
                     clientService.deleteClient(client);
                     tableModel.removeRow(selectedRow);
@@ -471,8 +471,8 @@ public class ManagerWindow extends BaseWindow {
         JPanel panel = new JPanel(new BorderLayout());
 
         // Create table model with columns
-        String[] realColumns = new String[]{"ID", "Dance Type", "Level", "Trainer", "Client"};
-        String[] displayColumns = new String[]{"Dance Type", "Level", "Trainer", "Client"};
+        String[] realColumns = new String[]{"ID", "Dance Type", "Level", "Trainer", "Client", "Schedule"};
+        String[] displayColumns = new String[]{"Dance Type", "Level", "Trainer", "Client", "Schedule"};
         EntityAwareTableModel<TrainingClass> tableModel = new EntityAwareTableModel<>(realColumns, displayColumns);
 
         tableModel.setColumnFormatter(0, TrainingClass::getDanceType);
@@ -485,6 +485,8 @@ public class ManagerWindow extends BaseWindow {
             Client trainer = clientService.getClientById(trainingClass.getClientId());
             return trainer.toString();
         });
+        tableModel.setColumnFormatter(4, TrainingClass::getSchedule);
+
         trainingClassTableModel = tableModel;
 
         // Create table and add it to a scroll pane
@@ -564,7 +566,7 @@ public class ManagerWindow extends BaseWindow {
 
     private void showAddClassDialog(EntityAwareTableModel<TrainingClass> tableModel) {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Add Class", true);
-        JPanel form = new JPanel(new GridLayout(5, 2, 5, 5));
+        JPanel form = new JPanel(new GridLayout(6, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JTextField danceTypeField = new JTextField();
@@ -576,6 +578,8 @@ public class ManagerWindow extends BaseWindow {
         List<Client> clients = clientService.getAllClients();
         JComboBox<Client> clientCombo = new JComboBox<>(clients.toArray(new Client[0]));
 
+        JTextField scheduleField = new JTextField();
+
         form.add(new JLabel("Dance Type:"));
         form.add(danceTypeField);
         form.add(new JLabel("Level:"));
@@ -584,6 +588,8 @@ public class ManagerWindow extends BaseWindow {
         form.add(trainerCombo);
         form.add(new JLabel("Clients:"));
         form.add(clientCombo);
+        form.add(new JLabel("Schedule:"));
+        form.add(scheduleField);
 
         JButton saveButton = new JButton("Save");
         JButton cancelButton = new JButton("Cancel");
@@ -596,10 +602,11 @@ public class ManagerWindow extends BaseWindow {
             TrainingLevel level = (TrainingLevel) levelCombo.getSelectedItem();
             Trainer trainer = (Trainer) trainerCombo.getSelectedItem();
             Client client = (Client) clientCombo.getSelectedItem();
+            String schedule = scheduleField.getText().trim();
 
-            if (!danceType.isEmpty() && level != null && trainer != null && client != null) {
+            if (!danceType.isEmpty() && level != null && trainer != null && client != null && schedule != null) {
                 TrainingClass training = trainingClassService.createTraining(
-                        danceType, level, trainer.getId(), client.getId());
+                        danceType, level, trainer.getId(), client.getId(), schedule);
 
                 tableModel.addEntity(training, TrainingClass::getId);
                 dialog.dispose();
@@ -620,7 +627,7 @@ public class ManagerWindow extends BaseWindow {
         TrainingClass trainingClass = tableModel.getEntityForRow(row);
 
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Edit Class", true);
-        JPanel form = new JPanel(new GridLayout(5, 2, 5, 5));
+        JPanel form = new JPanel(new GridLayout(6, 2, 5, 5));
         form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         JTextField danceTypeField = new JTextField(trainingClass.getDanceType());
@@ -635,6 +642,9 @@ public class ManagerWindow extends BaseWindow {
         JComboBox<Client> clientCombo = new JComboBox<>(clients.toArray(new Client[0]));
         clientCombo.setSelectedItem(clientService.getClientById(trainingClass.getClientId()));
 
+        JTextField scheduleField = new JTextField();
+        scheduleField.setText(trainingClass.getSchedule());
+
         form.add(new JLabel("Dance Type:"));
         form.add(danceTypeField);
         form.add(new JLabel("Level:"));
@@ -643,6 +653,8 @@ public class ManagerWindow extends BaseWindow {
         form.add(trainerCombo);
         form.add(new JLabel("Client:"));
         form.add(clientCombo);
+        form.add(new JLabel("Schedule:"));
+        form.add(scheduleField);
 
         JButton saveButton = new JButton("Save");
         JButton cancelButton = new JButton("Cancel");
@@ -655,12 +667,14 @@ public class ManagerWindow extends BaseWindow {
             TrainingLevel level = (TrainingLevel) levelCombo.getSelectedItem();
             Trainer trainer = (Trainer) trainerCombo.getSelectedItem();
             Client client = (Client) clientCombo.getSelectedItem();
+            String schedule = scheduleField.getText().trim();
 
             if (!danceType.isEmpty() && level != null && trainer != null && client != null) {
                 trainingClass.setDanceType(danceType);
                 trainingClass.setLevel(level);
                 trainingClass.setTrainerId(trainer.getId());
                 trainingClass.setClientId(client.getId());
+                trainingClass.setSchedule(schedule);
 
                 trainingClassService.updateTrainingClass(trainingClass);
 

@@ -13,31 +13,30 @@ public class TrainingClass {
     private TrainingLevel level;
     private String trainerId;
     private String clientId;
-    private List<LocalDate> schedule;
+    private String schedule;
 
     // Default constructor for Gson
     public TrainingClass() {
-        this.schedule = new ArrayList<>();
     }
 
     // Constructor for new training classes
-    public TrainingClass(String danceType, TrainingLevel level, String trainerId, String clientId) {
+    public TrainingClass(String danceType, TrainingLevel level, String trainerId, String clientId, String schedule) {
         this.id = UUID.randomUUID().toString();
         this.danceType = danceType;
         this.level = level;
         this.trainerId = trainerId;
         this.clientId = clientId;
-        this.schedule = new ArrayList<>();
+        this.schedule = schedule;
     }
 
     // Constructor with existing ID
-    public TrainingClass(String id, String danceType, TrainingLevel level, String trainerId, String clientId) {
+    public TrainingClass(String id, String danceType, TrainingLevel level, String trainerId, String clientId, String schedule) {
         this.id = id;
         this.danceType = danceType;
         this.level = level;
         this.trainerId = trainerId;
         this.clientId = clientId;
-        this.schedule = new ArrayList<>();
+        this.schedule = schedule;
     }
 
     // Getters and Setters
@@ -73,16 +72,12 @@ public class TrainingClass {
         this.trainerId = trainerId;
     }
 
-    public List<LocalDate> getSchedule() {
+    public String  getSchedule() {
         return schedule;
     }
 
-    public void setSchedule(List<LocalDate> schedule) {
+    public void setSchedule(String schedule) {
         this.schedule = schedule;
-    }
-
-    public void addScheduleDate(LocalDate date) {
-        this.schedule.add(date);
     }
 
     // Getters and Setters

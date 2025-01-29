@@ -86,7 +86,7 @@ public class Passport {
 
     @Override
     public String toString() {
-        return getSeries() + getNumber();
+        return getSeries() + " " + getNumber();
     }
 }
 

@@ -1,8 +1,6 @@
 package ui.users;
 
-import core.models.Passport;
 import core.models.Subscription;
-import core.models.actors.Client;
 import core.models.actors.Trainer;
 import core.models.base.TrainingClass;
 import core.services.core.*;
@@ -11,7 +9,6 @@ import ui.users.base.BaseWindow;
 import ui.utils.EntityAwareTableModel;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
@@ -97,8 +94,8 @@ public class ClientWindow extends BaseWindow {
         JPanel panel = new JPanel(new BorderLayout());
 
         // Create table model with columns
-        String[] realColumns = new String[]{"ID", "Dance Type", "Level", "Trainer"};
-        String[] displayColumns = new String[]{"Dance Type", "Level", "Trainer"};
+        String[] realColumns = new String[]{"ID", "Dance Type", "Level", "Trainer", "Schedule"};
+        String[] displayColumns = new String[]{"Dance Type", "Level", "Trainer", "Schedule"};
         EntityAwareTableModel<TrainingClass> tableModel = new EntityAwareTableModel<>(realColumns, displayColumns);
 
         // Set up column formatters
@@ -109,6 +106,7 @@ public class ClientWindow extends BaseWindow {
             Trainer trainer = trainerService.getTrainerById(trainingClass.getTrainerId());
             return trainer != null ? trainer.getName() : "Not Assigned";
         });
+        tableModel.setColumnFormatter(3, TrainingClass::getSchedule);
 
         // Create table and add it to a scroll pane
         JTable table = new JTable(tableModel);

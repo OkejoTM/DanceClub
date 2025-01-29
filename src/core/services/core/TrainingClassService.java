@@ -39,8 +39,8 @@ public class TrainingClassService {
         return new ArrayList<>(trainingClassStorageService.getAll());
     }
 
-    public TrainingClass createTraining(String danceType, TrainingLevel level, String trainerId, String clientId) {
-        TrainingClass training = new TrainingClass(danceType, level, trainerId, clientId);
+    public TrainingClass createTraining(String danceType, TrainingLevel level, String trainerId, String clientId, String schedule) {
+        TrainingClass training = new TrainingClass(danceType, level, trainerId, clientId, schedule);
         trainingClassStorageService.save(training);
 
         // Update trainer's training list

@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class EntityAwareTableModel<T> extends DefaultTableModel {
-    private final Map<Integer, T> rowToEntityMap = new HashMap<>();
-    private final Map<Integer, Function<T, String>> columnFormatters = new HashMap<>();
+    private final Map<Integer, T> rowToEntityMap = new HashMap<>(); // Для того чтобы хранить данные в строках
+    private final Map<Integer, Function<T, String>> columnFormatters = new HashMap<>(); // Форматеры для столбцов
     private final String[] realColumns;
     private final String[] displayColumns;
 
@@ -56,15 +56,15 @@ public class EntityAwareTableModel<T> extends DefaultTableModel {
         rowToEntityMap.putAll(newMap);
     }
 
-    @Override
-    public void setValueAt(Object value, int row, int column) {
-        super.setValueAt(value, row, column);
-        // Optionally update the entity if needed
-        T entity = rowToEntityMap.get(row);
-        if (entity != null) {
-            // The actual update of the entity should be handled by the service layer
-        }
-    }
+//    @Override
+//    public void setValueAt(Object value, int row, int column) {
+//        super.setValueAt(value, row, column);
+//        // Optionally update the entity if needed
+//        T entity = rowToEntityMap.get(row);
+//        if (entity != null) {
+//            // The actual update of the entity should be handled by the service layer
+//        }
+//    }
 
     @Override
     public boolean isCellEditable(int row, int column) {

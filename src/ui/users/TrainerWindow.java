@@ -49,15 +49,7 @@ public class TrainerWindow extends BaseWindow {
         tableModel.setColumnFormatter(0, TrainingClass::getDanceType);
         tableModel.setColumnFormatter(1, trainingClass ->
                 trainingClass.getLevel().toString());
-        tableModel.setColumnFormatter(2, trainingClass -> {
-            List<LocalDate> schedule = trainingClass.getSchedule();
-            if (schedule == null || schedule.isEmpty()) {
-                return "No scheduled dates";
-            }
-            return schedule.stream()
-                    .map(LocalDate::toString)
-                    .collect(Collectors.joining(", "));
-        });
+        tableModel.setColumnFormatter(2, TrainingClass::getSchedule);
 
         // Create table and add it to a scroll pane
         JTable table = new JTable(tableModel);
